@@ -1,6 +1,7 @@
 # Pedestrian_tracker
 data/images/
 data/output/
+weights/
 
 # PyCharm
 .idea/
