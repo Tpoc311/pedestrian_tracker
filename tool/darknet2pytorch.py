@@ -358,7 +358,7 @@ class Darknet(nn.Module):
                 out_strides.append(prev_stride)
                 models.append(EmptyModule())
             elif block['type'] == 'connected':
-                filters = int(block['output'])
+                filters = int(block['detections'])
                 if block['activation'] == 'linear':
                     model = nn.Linear(prev_filters, filters)
                 elif block['activation'] == 'leaky':

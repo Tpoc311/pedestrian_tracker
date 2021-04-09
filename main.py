@@ -9,7 +9,6 @@
     @Time      :
     @Detail    :
 '''
-import cv2
 
 from sort import *
 from tool.darknet2pytorch import Darknet
@@ -22,45 +21,6 @@ from tool.utils import *
 
 """hyper parameters"""
 use_cuda = True
-
-
-def detect_cv2_folder(cfgfile, weightfile, in_path, out_path):
-    import cv2
-    m = Darknet(cfgfile)
-
-    m.print_network()
-    m.load_weights(weightfile)
-    print('Loading weights from %s... Done!' % (weightfile))
-
-    if use_cuda:
-        m.cuda()
-
-    num_classes = m.num_classes
-    if num_classes == 20:
-        namesfile = 'data/voc.names'
-    elif num_classes == 80:
-        namesfile = 'data/coco.names'
-    else:
-        namesfile = 'data/pedestrian.names'
-    class_names = load_class_names(namesfile)
-
-    for filename in os.listdir(in_path):
-        file_path = os.path.join(in_path + filename)
-
-        img = cv2.imread(file_path)
-        sized = cv2.resize(img, (m.width, m.height))
-        sized = cv2.cvtColor(sized, cv2.COLOR_BGR2RGB)
-
-        for i in range(2):
-            start = time.time()
-            boxes = do_detect(m, sized, 0.5, 0.6, use_cuda)
-            finish = time.time()
-            if i == 1:
-                print('%s: Predicted in %f seconds.' % (filename, (finish - start)))
-
-        img, _ = plot_boxes_cv2(img, boxes[0], class_names=class_names)
-
-        cv2.imwrite(out_path + filename, img)
 
 
 def detect_cv2(cfgfile, weightfile, imgfile):
@@ -175,45 +135,74 @@ def detect_skimage(cfgfile, weightfile, imgfile):
     plot_boxes_cv2(img, boxes, savename='predictions.jpg', class_names=class_names)
 
 
+def detect_cv2_folder(cfgfile, weightfile, in_path, dets_path, tracks_path):
+    import cv2
+    m = Darknet(cfgfile)
+
+    # create instance of SORT
+    mot_tracker = Sort()
+
+    m.print_network()
+    m.load_weights(weightfile)
+    print('Loading weights from %s... Done!' % (weightfile))
+
+    if use_cuda:
+        m.cuda()
+
+    num_classes = m.num_classes
+    if num_classes == 20:
+        namesfile = 'data/voc.names'
+    elif num_classes == 80:
+        namesfile = 'data/coco.names'
+    else:
+        namesfile = 'data/pedestrian.names'
+    class_names = load_class_names(namesfile)
+
+    for filename in os.listdir(in_path):
+        file_path = os.path.join(in_path + filename)
+
+        img = cv2.imread(file_path)
+        sized = cv2.resize(img, (m.width, m.height))
+        sized = cv2.cvtColor(sized, cv2.COLOR_BGR2RGB)
+
+        for i in range(2):
+            start = time.time()
+            boxes = do_detect(m, sized, 0.5, 0.6, use_cuda)
+            finish = time.time()
+            if i == 1:
+                print('%s: Predicted in %f seconds.' % (filename, (finish - start)))
+
+        img_boxes, boxes_with_conf = plot_boxes_cv2(img, boxes[0], class_names=class_names)
+
+        # SORT tracker
+        # TODO Find out, why tracker works bad
+        track_bbs_ids = mot_tracker.update(boxes_with_conf)
+        img_tracks = plot_tracks_cv2(img, track_bbs_ids)
+
+        cv2.imwrite(dets_path + filename, img_boxes)
+        cv2.imwrite(tracks_path + filename, img_tracks)
+
+
 def get_args():
     parser = argparse.ArgumentParser('Test your image or video by trained model.')
-    parser.add_argument('-cfgfile', type=str, default='./cfg/yolov4.cfg',
+    parser.add_argument('-cfgfile', type=str,
+                        default='cfg/yolov4.cfg',
                         help='path of cfg file', dest='cfgfile')
     parser.add_argument('-weightfile', type=str,
-                        default='./checkpoints/Yolov4_epoch1.pth',
+                        default='weights/yolov4.weights',
                         help='path of trained model.', dest='weightfile')
     parser.add_argument('-inpath', type=str,
-                        default='data/images',
+                        default='data/images/',
                         help='folder containing input images', dest='inpath')
-    parser.add_argument('-outpath', type=str,
-                        default='data/output',
-                        help='folder which will contain output images', dest='outpath')
+    parser.add_argument('-detections', type=str,
+                        default='data/detections/',
+                        help='folder which will contain images with detections', dest='detections')
+    parser.add_argument('-tracks', type=str,
+                        default='data/tracks/',
+                        help='folder which will contain images with tracks', dest='tracks')
     args = parser.parse_args()
 
     return args
-
-
-# def get_detections():
-
-def plot_tracks(img, boxes):
-    width = img.shape[1]
-    height = img.shape[0]
-
-    for i in range(len(boxes)):
-        box = boxes[i]
-        x1 = int(box[0] * width)
-        y1 = int(box[1] * height)
-        x2 = int(box[2] * width)
-        y2 = int(box[3] * height)
-        id = str(box[4])
-
-        rgb = (255, 0, 0)
-        img = cv2.putText(img, id, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1.2, rgb, 1)
-        img = cv2.rectangle(img, (x1, y1), (x2, y2), rgb, 1)
-
-    cv2.imshow('Yolo demo', img)
-
-    print(11)
 
 
 if __name__ == '__main__':
@@ -223,15 +212,19 @@ if __name__ == '__main__':
     cfgfile = args.cfgfile
     weightfile = args.weightfile
     inpath = args.inpath
-    outpath = args.outpath
+    detections_path = args.detections
+    tracks_path = args.tracks
 
-    if not os.path.exists(outpath):
-        os.mkdir(outpath)
+    if not os.path.exists(detections_path):
+        os.mkdir(detections_path)
+    if not os.path.exists(tracks_path):
+        os.mkdir(tracks_path)
 
     detect_cv2_folder(cfgfile,
                       weightfile,
                       inpath,
-                      outpath)
+                      detections_path,
+                      tracks_path)
 
     # TODO SORT Tracker
     # ##############################################################################################

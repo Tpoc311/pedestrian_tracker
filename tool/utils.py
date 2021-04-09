@@ -139,6 +139,28 @@ def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):
     return img, bboxes
 
 
+def plot_tracks_cv2(img, boxes, savename=None, class_names=None, color=None):
+    import cv2
+    img = np.copy(img)
+
+    for i in range(len(boxes)):
+        box = boxes[i]
+        x1 = int(box[0])
+        y1 = int(box[1])
+        x2 = int(box[2])
+        y2 = int(box[3])
+        id = str(int(box[4]))
+
+
+        if color is None:
+            rgb = (255, 0, 0)
+
+        img = cv2.putText(img, id, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1.2, rgb, 1)
+        img = cv2.rectangle(img, (x1, y1), (x2, y2), rgb, 1)
+
+    return img
+
+
 def read_truths(lab_path):
     if not os.path.exists(lab_path):
         return np.array([])
