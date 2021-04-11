@@ -151,7 +151,6 @@ def plot_tracks_cv2(img, boxes, savename=None, class_names=None, color=None):
         y2 = int(box[3])
         id = str(int(box[4]))
 
-
         if color is None:
             rgb = (255, 0, 0)
 

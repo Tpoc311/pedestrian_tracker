@@ -39,7 +39,7 @@ def bbox_ious(boxes1, boxes2, x1y1x2y2=True):
 
 
 def get_region_boxes(boxes_and_confs):
-    # print('Getting boxes from boxes and confs ...')
+    # Getting boxes from boxes and confs
 
     boxes_list = []
     confs_list = []

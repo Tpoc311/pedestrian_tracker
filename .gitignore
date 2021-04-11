@@ -1,8 +1,6 @@
 # Pedestrian_tracker
-data/images/
-data/detections/
-data/tracks/
-data/videos/
+data/input/
+data/output/
 weights/
 
 

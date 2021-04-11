@@ -37,7 +37,7 @@ def parse_cfg(cfgfile):
 
 
 def print_cfg(blocks):
-    print('layer     filters    size              input                detections');
+    print('layer     filters    size              input                output');
     prev_width = 416
     prev_height = 416
     prev_filters = 3
@@ -175,7 +175,7 @@ def print_cfg(blocks):
             out_heights.append(prev_height)
             out_filters.append(prev_filters)
         elif block['type'] == 'connected':
-            filters = int(block['detections'])
+            filters = int(block['output'])
             print('%5d %-6s                            %d  ->  %3d' % (ind, 'connected', prev_filters, filters))
             prev_filters = filters
             out_widths.append(1)
