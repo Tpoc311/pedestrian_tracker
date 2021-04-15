@@ -10,6 +10,7 @@
     @Time      :
     @Detail    :
 '''
+import argparse
 
 from sort import *
 from tool.darknet2pytorch import Darknet
@@ -20,12 +21,12 @@ from tool.utils import *
 use_cuda = True
 
 
-def detect_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpath='data/output/'):
+def track_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpath='data/output/'):
     import cv2
     m = Darknet(cfgfile)
 
     # create instance of SORT
-    mot_tracker = Sort()
+    mot_tracker = Sort(max_age=5, iou_threshold=0.8)
 
     m.print_network()
     print('Loading weights from %s...' % weightfile, end=' ')
@@ -43,8 +44,15 @@ def detect_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpat
 
     class_names = load_class_names('data/pedestrian.names')
 
+    history = {}
     while True:
         ret, img = cap.read()
+
+        if ret is False:
+            print("End of video")
+            cap.release()
+            return
+
         sized = cv2.resize(img, (m.width, m.height))
         sized = cv2.cvtColor(sized, cv2.COLOR_BGR2RGB)
 
@@ -57,8 +65,13 @@ def detect_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpat
 
         # SORT tracker
         start = time.time()
-        track_bbs_ids = mot_tracker.update(boxes_with_conf)
+        track_bbs_ids, trackers = mot_tracker.update(boxes_with_conf)
         img_with_tracks = plot_tracks_cv2(img, track_bbs_ids)
+
+        # TODO Drawing trajectories
+        img_with_tracks = print_trajectories(img_with_tracks, trackers)
+        # TODO END
+
         finish = time.time()
         print('Computed SORT in %f seconds.' % (finish - start))
 
@@ -101,8 +114,10 @@ if __name__ == '__main__':
     if not os.path.exists(outpath):
         os.mkdir(outpath)
 
-    detect_cv2_video(cfgfile,
-                     weightfile,
-                     filename='mot.webm',
-                     inpath=inpath,
-                     outpath=outpath)
+    track_cv2_video(cfgfile,
+                    weightfile,
+                    filename='mot.webm',
+                    inpath=inpath,
+                    outpath=outpath)
+# mot.webm
+# /JAAD_clips/video_0002.mp4
