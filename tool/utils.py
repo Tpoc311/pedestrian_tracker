@@ -139,7 +139,7 @@ def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):
     return img, bboxes
 
 
-def plot_tracks_cv2(img, boxes, savename=None, class_names=None, color=None):
+def plot_tracks_cv2(img, boxes, color=None):
     import cv2
     img = np.copy(img)
 
@@ -154,8 +154,8 @@ def plot_tracks_cv2(img, boxes, savename=None, class_names=None, color=None):
         if color is None:
             rgb = (255, 0, 0)
 
-        img = cv2.putText(img, id, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1.2, rgb, 1)
-        img = cv2.rectangle(img, (x1, y1), (x2, y2), rgb, 1)
+        img = cv2.putText(img, id, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1.2, rgb, 2)
+        img = cv2.rectangle(img, (x1, y1), (x2, y2), rgb, 2)
 
     return img
 

@@ -10,23 +10,23 @@
     @Time      :
     @Detail    :
 '''
-import argparse
 
 from sort import *
 from tool.darknet2pytorch import Darknet
 from tool.torch_utils import *
 from tool.utils import *
+import PySimpleGUI as sg
+import cv2
 
 """hyper parameters"""
 use_cuda = True
 
 
 def track_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpath='data/output/'):
-    import cv2
-    m = Darknet(cfgfile)
 
-    # create instance of SORT
-    mot_tracker = Sort(max_age=5, iou_threshold=0.8)
+    # create instance of YOLO and SORT
+    m = Darknet(cfgfile)
+    tracker = Sort(max_age=5, iou_threshold=0.2)
 
     m.print_network()
     print('Loading weights from %s...' % weightfile, end=' ')
@@ -36,22 +36,38 @@ def track_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpath
     if use_cuda:
         m.cuda()
 
-    # cap = cv2.VideoCapture(0)
     cap = cv2.VideoCapture(inpath + filename)
     cap.set(3, cv2.CAP_PROP_FRAME_HEIGHT)
     cap.set(4, cv2.CAP_PROP_FRAME_WIDTH)
     print("Starting the YOLOv4+SORT loop...")
 
     class_names = load_class_names('data/pedestrian.names')
+    i = 0
+    total_fps = 0
 
-    history = {}
+    # Define interface
+    layout = [[sg.Checkbox('Draw BBoxes', default=True, key='-checkbox-')],
+              [sg.Text('Счётчик FPS: 0', key='-fps-', size=(20,1))],
+              [sg.Image(filename='', key='-image-')],
+              [sg.Button('Exit', size=(7, 1), pad=((600, 0), 3), font='Helvetica 14')]]
+    sg.theme('SystemDefaultForReal')
+    window = sg.Window("Image Viewer", layout)
+
+    # Starting main loop
     while True:
+
+        # Define variables and timeout for interface
+        event, values = window.read(timeout=0)
+
+        # # Variable for counting FPS
+        # start_time = time.time()
+
         ret, img = cap.read()
 
-        if ret is False:
-            print("End of video")
+        if event in (None, 'Exit', 'Cancel') or ret is False:
             cap.release()
-            return
+            window.close()
+            return total_fps, i
 
         sized = cv2.resize(img, (m.width, m.height))
         sized = cv2.cvtColor(sized, cv2.COLOR_BGR2RGB)
@@ -61,24 +77,40 @@ def track_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpath
         finish = time.time()
         print('Predicted YOLOv4 in %f seconds.' % (finish - start))
 
-        result_img, boxes_with_conf = plot_boxes_cv2(img, boxes[0], savename=None, class_names=class_names)
+        _, boxes_with_conf = plot_boxes_cv2(img, boxes[0], savename=None, class_names=class_names)
 
         # SORT tracker
-        start = time.time()
-        track_bbs_ids, trackers = mot_tracker.update(boxes_with_conf)
-        img_with_tracks = plot_tracks_cv2(img, track_bbs_ids)
+        # start = time.time()
+        if len(boxes_with_conf) == 0:
+            track_bbs_ids, trackers = tracker.update()
+        else:
+            track_bbs_ids, trackers = tracker.update(dets=boxes_with_conf)
 
-        # TODO Drawing trajectories
-        img_with_tracks = print_trajectories(img_with_tracks, trackers)
-        # TODO END
+        # Draw BBoxes
+        if values['-checkbox-']:
+            img = plot_tracks_cv2(img, track_bbs_ids)
 
-        finish = time.time()
+        # finish = time.time()
+
+        # Count FPS
+        img_w = img.shape[1]
+        fps = round(1.0 / (finish - start), 2)
+        total_fps += fps
+
         print('Computed SORT in %f seconds.' % (finish - start))
 
-        cv2.imshow('YOLOv4+SORT demo ', img_with_tracks)
-        cv2.waitKey(1)
+        cv2.imwrite(filename=outpath+str(i)+'.jpg', img=img)
+        i += 1
 
-    cap.release()
+        img = cv2.resize(img, (1280, 640))
+
+        # Update image in interface
+        image_elem = window['-image-']
+        fps_elem = window['-fps-']
+
+        imgbytes = cv2.imencode('.png', img)[1].tobytes()
+        image_elem.update(data=imgbytes)
+        fps_elem.update(value='Счётчик FPS: ' + str(fps))
 
 
 def get_args():
@@ -109,15 +141,19 @@ if __name__ == '__main__':
     inpath = args.inpath
     outpath = args.outpath
 
-    if not os.path.exists(inpath):
-        os.mkdir(inpath)
     if not os.path.exists(outpath):
         os.mkdir(outpath)
 
-    track_cv2_video(cfgfile,
+    total_fps, count_frames = track_cv2_video(cfgfile,
                     weightfile,
-                    filename='mot.webm',
+                    filename='/JAAD_clips/video_0031.mp4',
                     inpath=inpath,
                     outpath=outpath)
+
+    print('Mean FPS: ' + str(round(total_fps / count_frames, 2)))
 # mot.webm
+# /JAAD_clips/video_0031.mp4
 # /JAAD_clips/video_0002.mp4
+# /JAAD_clips/video_0223.mp4
+# /1.mp4
+# /4.mp4
