@@ -120,7 +120,7 @@ def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):
         if len(box) >= 7 and class_names:
             cls_conf = box[5]
             cls_id = box[6]
-            print('%s: %f' % (class_names[cls_id], cls_conf))
+            # print('%s: %f' % (class_names[cls_id], cls_conf))
             classes = len(class_names)
             offset = cls_id * 123457 % classes
             red = get_color(2, offset, classes)
@@ -243,10 +243,10 @@ def post_processing(img, conf_thresh, nms_thresh, output):
 
     t3 = time.time()
 
-    print('-----------------------------------')
-    print('       max and argmax : %f' % (t2 - t1))
-    print('                  nms : %f' % (t3 - t2))
-    print('Post processing total : %f' % (t3 - t1))
-    print('-----------------------------------')
+    # print('-----------------------------------')
+    # print('       max and argmax : %f' % (t2 - t1))
+    # print('                  nms : %f' % (t3 - t2))
+    # print('Post processing total : %f' % (t3 - t1))
+    # print('-----------------------------------')
 
     return bboxes_batch

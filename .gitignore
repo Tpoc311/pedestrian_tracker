@@ -1,6 +1,9 @@
 # Pedestrian_tracker
-data/input/
+data/custom/
+data/jaad/
+data/mot/
 data/output/
+data/*.zip
 weights/
 
 

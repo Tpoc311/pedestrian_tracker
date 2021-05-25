@@ -22,8 +22,7 @@ import cv2
 use_cuda = True
 
 
-def track_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpath='data/output/'):
-
+def track_cv2_video(cfgfile, weightfile, filename, inpath='data/', outpath='data/output/'):
     # create instance of YOLO and SORT
     m = Darknet(cfgfile)
     tracker = Sort(max_age=5, iou_threshold=0.2)
@@ -39,6 +38,7 @@ def track_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpath
     cap = cv2.VideoCapture(inpath + filename)
     cap.set(3, cv2.CAP_PROP_FRAME_HEIGHT)
     cap.set(4, cv2.CAP_PROP_FRAME_WIDTH)
+
     print("Starting the YOLOv4+SORT loop...")
 
     class_names = load_class_names('data/pedestrian.names')
@@ -47,7 +47,7 @@ def track_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpath
 
     # Define interface
     layout = [[sg.Checkbox('Draw BBoxes', default=True, key='-checkbox-')],
-              [sg.Text('Счётчик FPS: 0', key='-fps-', size=(20,1))],
+              [sg.Text('Счётчик FPS: 0', key='-fps-', size=(20, 1))],
               [sg.Image(filename='', key='-image-')],
               [sg.Button('Exit', size=(7, 1), pad=((600, 0), 3), font='Helvetica 14')]]
     sg.theme('SystemDefaultForReal')
@@ -99,7 +99,7 @@ def track_cv2_video(cfgfile, weightfile, filename, inpath='data/input/', outpath
 
         print('Computed SORT in %f seconds.' % (finish - start))
 
-        cv2.imwrite(filename=outpath+str(i)+'.jpg', img=img)
+        cv2.imwrite(filename=outpath + str(i) + '.jpg', img=img)
         i += 1
 
         img = cv2.resize(img, (1280, 640))
@@ -122,7 +122,7 @@ def get_args():
                         default='weights/yolov4.weights',
                         help='path of trained model.', dest='weightfile')
     parser.add_argument('-inpath', type=str,
-                        default='data/input/',
+                        default='data/',
                         help='folder containing input images', dest='inpath')
     parser.add_argument('-outpath', type=str,
                         default='data/output/',
@@ -145,10 +145,10 @@ if __name__ == '__main__':
         os.mkdir(outpath)
 
     total_fps, count_frames = track_cv2_video(cfgfile,
-                    weightfile,
-                    filename='/JAAD_clips/video_0031.mp4',
-                    inpath=inpath,
-                    outpath=outpath)
+                                              weightfile,
+                                              filename='jaad/video_0031.mp4',
+                                              inpath=inpath,
+                                              outpath=outpath)
 
     print('Mean FPS: ' + str(round(total_fps / count_frames, 2)))
 # mot.webm
