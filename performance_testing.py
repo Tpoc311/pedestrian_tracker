@@ -1,20 +1,14 @@
+import json
+
+from main import get_args
 from sort import *
 from tool.darknet2pytorch import Darknet
 from tool.torch_utils import *
 from tool.utils import *
-from main import get_args
-import shutil
-import json
-import cv2
 
 """hyper parameters"""
 use_cuda = True
 
-
-# variants of filenames
-# Custom_1.mp4
-# Custom_4.mp4
-# video_0031.mp4
 
 def fps_test(cfgfile, weightfile, filename, w, h, inpath='data/input/'):
     # create instance of YOLO and SORT
@@ -61,9 +55,9 @@ def fps_test(cfgfile, weightfile, filename, w, h, inpath='data/input/'):
         # SORT tracker
         start_track = time.time()
         if len(boxes_with_conf) == 0:
-            track_bbs_ids, trackers = tracker.update()
+            tracker.update()
         else:
-            track_bbs_ids, trackers = tracker.update(dets=boxes_with_conf)
+            tracker.update(dets=boxes_with_conf)
         finish_track = time.time()
 
         # Count FPS
@@ -109,10 +103,5 @@ def test_all(w, h):
         test_jaad = count_mean_fps('data/jaad/', w=w, h=h)
         file.write('JAAD data: ' + json.dumps(test_jaad) + '\n')
 
-
-# Path to
-# jaad data - data/jaad/
-# mot data - data/mot/
-# custom data - data/custom/
 
 test_all(w=320, h=416)

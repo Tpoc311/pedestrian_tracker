@@ -1,22 +1,9 @@
-# -*- coding: utf-8 -*-
-'''
-@Time          : 20/04/25 15:49
-@Author        : huguanghao
-@File          : demo.py
-@Noice         :
-@Modificattion :
-    @Author    : Tpoc311
-    @File      : main.py (renamed)
-    @Time      :
-    @Detail    :
-'''
+import PySimpleGUI as sg
 
 from sort import *
 from tool.darknet2pytorch import Darknet
 from tool.torch_utils import *
 from tool.utils import *
-import PySimpleGUI as sg
-import cv2
 
 """hyper parameters"""
 use_cuda = True
@@ -59,9 +46,6 @@ def track_cv2_video(cfgfile, weightfile, filename, inpath='data/', outpath='data
         # Define variables and timeout for interface
         event, values = window.read(timeout=0)
 
-        # # Variable for counting FPS
-        # start_time = time.time()
-
         ret, img = cap.read()
 
         if event in (None, 'Exit', 'Cancel') or ret is False:
@@ -69,18 +53,14 @@ def track_cv2_video(cfgfile, weightfile, filename, inpath='data/', outpath='data
             window.close()
             return total_fps, i
 
+        start = time.time()
         sized = cv2.resize(img, (m.width, m.height))
         sized = cv2.cvtColor(sized, cv2.COLOR_BGR2RGB)
-
-        start = time.time()
         boxes = do_detect(m, sized, 0.5, 0.6, use_cuda)
-        finish = time.time()
-        print('Predicted YOLOv4 in %f seconds.' % (finish - start))
 
         _, boxes_with_conf = plot_boxes_cv2(img, boxes[0], savename=None, class_names=class_names)
 
         # SORT tracker
-        # start = time.time()
         if len(boxes_with_conf) == 0:
             track_bbs_ids, trackers = tracker.update()
         else:
@@ -89,11 +69,10 @@ def track_cv2_video(cfgfile, weightfile, filename, inpath='data/', outpath='data
         # Draw BBoxes
         if values['-checkbox-']:
             img = plot_tracks_cv2(img, track_bbs_ids)
-
-        # finish = time.time()
+        finish = time.time()
+        print('Predicted YOLOv4 in %f seconds.' % (finish - start))
 
         # Count FPS
-        img_w = img.shape[1]
         fps = round(1.0 / (finish - start), 2)
         total_fps += fps
 
@@ -151,9 +130,3 @@ if __name__ == '__main__':
                                               outpath=outpath)
 
     print('Mean FPS: ' + str(round(total_fps / count_frames, 2)))
-# mot.webm
-# /JAAD_clips/video_0031.mp4
-# /JAAD_clips/video_0002.mp4
-# /JAAD_clips/video_0223.mp4
-# /1.mp4
-# /4.mp4
