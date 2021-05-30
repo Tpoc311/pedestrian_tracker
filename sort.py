@@ -77,7 +77,7 @@ def convert_x_to_bbox(x, score=None):
         return np.array([x[0] - w / 2., x[1] - h / 2., x[0] + w / 2., x[1] + h / 2., score]).reshape((1, 5))
 
 
-class KalmanBoxTracker(object):
+class BoxTracker(object):
     """
     This class represents the internal state of individual tracked objects observed as bbox.
     """
@@ -111,8 +111,8 @@ class KalmanBoxTracker(object):
 
         self.kf.x[:4] = convert_bbox_to_z(bbox)
         self.time_since_update = 0
-        self.id = KalmanBoxTracker.count
-        KalmanBoxTracker.count += 1
+        self.id = BoxTracker.count
+        BoxTracker.count += 1
         self.history = []
         self.hits = 0
         self.hit_streak = 0
@@ -240,7 +240,7 @@ class Sort(object):
 
         # create and initialise new trackers for unmatched detections
         for i in unmatched_dets:
-            trk = KalmanBoxTracker(dets[i, :])
+            trk = BoxTracker(dets[i, :])
             self.trackers.append(trk)
         i = len(self.trackers)
         for trk in reversed(self.trackers):

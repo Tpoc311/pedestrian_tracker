@@ -12,7 +12,7 @@ use_cuda = True
 def track_cv2_video(cfgfile, weightfile, filename, inpath='data/', outpath='data/output/'):
     # create instance of YOLO and SORT
     m = Darknet(cfgfile)
-    tracker = Sort(max_age=5, iou_threshold=0.2)
+    tracker = Sort(max_age=25, iou_threshold=0.5)
 
     m.print_network()
     print('Loading weights from %s...' % weightfile, end=' ')
@@ -130,3 +130,6 @@ if __name__ == '__main__':
                                               outpath=outpath)
 
     print('Mean FPS: ' + str(round(total_fps / count_frames, 2)))
+
+# 'jaad/video_0009.mp4'
+# 'jaad/video_0031.mp4'
